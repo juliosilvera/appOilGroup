@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="sqlite-native-driver">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../../xamppfiles/htdocs/appOilGroup/platforms/android/libs/sqlite-native-driver.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

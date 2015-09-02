@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+        <meta name="format-detection" content="telephone=no">
+        <meta charset="utf-8">
+
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <link href="css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet" type="text/css" href="css/pedidos.css">
+        <title>Oil Group</title>
+    </head>
+    <body>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Oil Group - Pedidos</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Clusterización <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        <li><a href="encuestas.html">Clusterización</a></li>
+                        <li><a href="ver_encuestas.html">Ver Clusterización</a></li>
+                        <li><a href="enviar.html">Enviar Clusterización</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Pedidos <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        <li><a href="pedidos.html">Pedidos</a></li>
+                        <li><a href="ver_pedidos.html">Ver Pedidos</a></li>
+                        <li><a href="enviar_pedidos.html">Enviar Pedidos</a></li>
+                      </ul>
+                    </li>
+                    <li><a href="estado_pedidos.html">Estado de Pedidos</a></li>
+                    <li><a href="salir.html">Salir</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav>
+        <div class="content">
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Buscar</h4>
+                    <select id="buscar" class="form-control">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="col-xs-6 col-sm-6">
+                    <h4>Cliente</h4>
+                    <input type="text" id="cliente" class="form-control" readonly>
+                </div>
+                <div class="col-xs-6 col-sm-3">
+                    <h4>Codigo</h4>
+                    <input type="text" id="codigo" class="form-control" readonly>
+                </div>
+                <div class="col-xs-6 col-sm-3">
+                    <h4>Lista</h4>
+                    <input type="text" id="lista" class="form-control" readonly>
+                </div>
+                <hr />
+                <div class="col-xs-6 col-md-4">
+                    <h4>Nombre del Local</h4>
+                    <input type="text" id="local" class="form-control">
+                </div>
+                <div class="col-xs-6 col-md-4">
+                    <h4>Email</h4>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                <hr />
+            </div>
+            <h4>Productos</h4>
+            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+              <div id="lista_productos"></div>
+            </div>
+            <h4>TOTALES</h4>
+            <div class='row'>
+            <div class='col-md-12'>
+            <table class='table table-bordered'>
+            <tr>
+                <td>
+                    Sub-Total
+                </td>
+                <td>
+                    Descuento
+                </td>
+                <td>
+                    12% IVA
+                </td>
+                <td>
+                    TOTAL
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" class="form-control" id="sub_total" readonly>
+                </td>
+                <td>
+                    <input type="text" class="form-control" id="descuento" readonly>
+                </td>
+                <td>
+                    <input type="text" class="form-control" id="iva" readonly>
+                </td>
+                <td>
+                    <input type="text" class="form-control" id="total" readonly>
+                </td>
+            </tr>
+            </table>
+            </div>
+            </div>
+            <div class="col-md-4">
+                <label>Observaciones</label>
+                <textarea id="observaciones" class="form-control"></textarea>
+            </div>
+            <br><br>
+            <!-- Modal -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Alerta de Promociones</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div id="alerta"></div>
+                    <hr />
+                    <center><h4>Confirmación de Email</h4></center>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <input type="email" id="email1" class="form-control">
+                            <input type="email" id="email2" class="form-control" placeholder="Confirmar Email">
+                        </div>
+                    </div>
+                    <hr />
+                    <center><h4>Pedido Actual</h4></center>
+                    <table class="table table-bordered" id="content" required>
+                        <tr>
+                            <th>
+                                DESCRIPCION
+                            </th>
+                            <th>
+                                ENVASE
+                            </th>
+                            <th>
+                            PRECIO
+                            </th>
+                            <th>
+                            CANTIDAD
+                            </th>
+                            <th>
+                            TOTAL
+                            </th>
+                        </tr>
+                    </table>
+                    <div id="pedido_corto"></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Seguir con la Compra</button>
+                    <button type="button" class="btn btn-primary" id="enviar">Enviar Pedido</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+<div class="col-md-4">
+    <button class="form-control btn-primary" id="send" data-toggle="modal" data-target="#myModal">Enviar</button>
+</div>
+
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="js/jquery.js"></script>
+        <script src="js/select2.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/pedidos.js"></script>
+        
+    </body>
+</html>
