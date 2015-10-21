@@ -10,7 +10,7 @@ function onDeviceReady(){
 
 //function will be called when an error occurred
 function errorCB(err) {
-    alert("Error processing SQL: "+err.code);
+    alert("No tiene pedidos cargados!");
 }
 
 //select all from SoccerPlayer

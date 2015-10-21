@@ -8,6 +8,7 @@ var lista_productos1 = "";
 var lista_productos2 = "";
 
 $(function(){
+    db3.transaction(temp_pedidos,errorCB,successCB1);
     db4.transaction(queryAsesor);
     db2.transaction(queryDB);
     db3.transaction(queryDB2);
@@ -19,11 +20,24 @@ $(function(){
 var fecha = new Date();
 var dd = fecha.getDate();
 var mm = fecha.getMonth()+1;//January is 0, so always add + 1
+var hh = fecha.getHours();
+var min = fecha.getMinutes();
 
 var yyyy = fecha.getFullYear();
 if(dd<10){dd='0'+dd}
 if(mm<10){mm='0'+mm}
+if(hh<10){hh='0'+hh}
+if(min<10){min='0'+min}
 fecha = yyyy+'-'+mm+'-'+dd;
+var hora = hh + ":" + min;
+
+function temp_pedidos(tx){
+    tx.executeSql('DROP TABLE IF EXISTS Temp_Pedidos');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS Temp_Pedidos (id INTEGER PRIMARY KEY AUTOINCREMENT, producto TEXT, cantidad TEXT, precio TEXT, total TEXT, descripcion TEXT, envase TEXT, descuento TEXT)');
+
+}
+
+
 
 function queryAsesor(tx)
 {
@@ -38,8 +52,8 @@ function queryAsesor(tx)
 
 
 //function will be called when an error occurred
-function errorCB(err) {
-    alert("Error processing SQL: "+err.code);
+function errorCB(err, t, v) {
+    alert("Error processing SQL: "+err);
 }
 
 //function will be called when process succeed
@@ -49,8 +63,7 @@ function successCB() {
 }
 
 function successCB1() {
-   
-    
+
 }
 
 function carga(){
@@ -60,6 +73,7 @@ function carga(){
 
 function queryDB(tx){
     tx.executeSql('SELECT * FROM Clientes',[],querySuccess,errorCB);
+
 }
 
 function queryDB2(tx){
@@ -68,7 +82,6 @@ function queryDB2(tx){
 }
 
 function querySuccess(tx, result){
-
     for (var i = 0; i < result.rows.length; i++)
     {
         var row = result.rows.item(i);
@@ -84,7 +97,7 @@ function querySuccess2(tx, result){
         var row = result.rows.item(i);
         populateProductos(row['familia']);
         var familia2 = row['familia'];
-        var familia = familia2.replace("/", "");
+        var familia = familia2.replace("/", "-");
         $('#lista_productos').append('<div class="row"><div class="col-md-6">'+
             '<div class="panel panel-default">'+
             '<div class="panel-heading" role="tab" id="'+familia.replace(/ /g, '_')+'">'+
@@ -113,6 +126,7 @@ function querySuccess2(tx, result){
                     '<th>'+
                     'TOTAL'+
                     '</th>'+
+                    '<th></th>'+
                 '</tr>'+
                 '</table>'+
               '</div>'+
@@ -131,12 +145,14 @@ function populateProductos(familia){
                 {
                     var row = result2.rows.item(j);
                     var familia2 = row['familia'];
-                    var familia = familia2.replace("/", "");
-                    $('#content_'+familia.replace(/ /g, '_')).append('<tr><td id="desc_'+row['sap']+'">'+row['descripcion']+'<input type="hidden" id="old_'+row['sap']+'"></td><td>'+row['envase']+'</td><td><input type="text" id="precio_'+row['sap']+'" readonly class="form-cotrol"></td><td><input type="number" id="cantidad_'+row['sap']+'" value="0" class="form-cotrol"></td><td><input type="text" id="calculo_'+row['sap']+'" readonly class="form-cotrol"></td></tr>');
+                    var familia = familia2.replace("/", "-");
+                    $('#content_'+familia.replace(/ /g, '_')).append('<tr><td id="desc_'+row['sap']+'">'+row['descripcion']+'</td><td>'+row['envase']+'</td><td><input type="hidden" id="old_'+row['sap']+'"><input type="hidden" id="old2_'+row['sap']+'"><select id="precio_'+row['sap']+'" class="form-control" style="width:100px"></select></td><td><input type="number" id="cantidad_'+row['sap']+'" value="0" class="form-cotrol" style="width:80px"></td><td><input type="text" id="calculo_'+row['sap']+'" readonly class="form-cotrol" style="width:80px"></td><td><input type="button" id="descButton_'+row['sap']+'" class="btn btn-xs btn-danger" value="OFF" disabled></td></tr>');
                 }
             });
         });
 }
+
+
 
 $("#buscar").change(function(){
     $("#buscar option:selected").each(function(){
@@ -151,21 +167,65 @@ $("#buscar").change(function(){
         $("#cliente").val(cliente);
         $("#codigo").val(codigo);
         $("#lista").val(lista);
-        if (lista == 'le') 
-        {
-            lista = "lista_le";
-        }
         db3.transaction(function(tx){
             
             tx.executeSql('SELECT * FROM Productos', [], function(tx, result){
                 for (var i = 0; i < result.rows.length; i++) 
                 {
                     $row1 = result.rows.item(i);
-                    $("#precio_" + $row1['sap']).val($row1[l]);
-                    $("#old_" + $row1['sap']).val($row1[l]);
-                    populateDescuentos($row1['sap'], l);
+                    if(l == "LE")
+                    {
+                        if($row1['LA'] > 0)
+                        {
+                            var precio_la = Number($row1['LA']);
+                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                        }
+                        if($row1['MIX_LA_LE'] > 0)
+                        {
+                            var precio_mix_la_le = Number($row1['MIX_LA_LE']);
+                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                        }
+                        if($row1['LE'] > 0)
+                        {
+                            var precio_le = Number($row1['LE']);
+                            $("#precio_" + $row1['sap']).append("<option>"+precio_le.toFixed(2)+"</option>");
+                        }
 
-                    calculos($row1['sap'], $row1['descripcion'], $row1['envase']);
+                    }
+                    else if(l == "LA")
+                    {
+
+                        if($row1['LA'] > 0)
+                        {
+                            var precio_la = Number($row1['LA']);
+                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                        }
+                        if($row1['MIX_LA_LE'] > 0)
+                        {
+                            var precio_mix_la_le = Number($row1['MIX_LA_LE']);
+                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                        }
+
+                    }else{
+
+                        if($row1['LA'] > 0)
+                        {
+                            var precio_la = Number($row1['LA']);
+                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                        }
+                        if($row1[l] > 0)
+                        {
+                            var precio_mix_la_le = Number($row1[l]);
+                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                        }
+
+
+                    }
+
+                    $("#old_" + $row1['sap']).val($row1['LA']);
+                    populateDescuentos($row1['sap'], l, $row1['descripcion']);
+
+                    calculos($row1['sap'], $row1['descripcion'], $row1['envase'], $row1['familia']);
 
                     
                 }
@@ -189,83 +249,356 @@ $("#buscar").change(function(){
     });
 });
 
-function calculos(sap, desc, envase)
+
+
+function calculos(sap, desc, envase, familia)
 {
+
+    $("#precio_" + sap).change(function(){
+        $("#content").empty();
+        $("#content").append('<tr><th>DESCRIPCION</th><th>ENVASE</th><th>PRECIO</th><th>CANTIDAD</th><th>TOTAL</th></tr>');
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT * FROM Temp_Pedidos WHERE producto = "'+sap+'"', [], function(tx, result){
+                var cant = $("#cantidad_" + sap).val();
+                var prec = $("#precio_" + sap).val();
+                var old = $("#old_" + sap).val();
+                var t = cant * prec;
+                var o = cant * old;
+                var d = o - t;
+                var valor = (Math.round(t * 100) / 100).toFixed(2);
+                $("#calculo_" + sap).val(valor);
+                if(result.rows.length <= 0)
+                {
+                    tx.executeSql('INSERT INTO Temp_Pedidos (producto, cantidad, precio, total, descripcion, envase, descuento) VALUES ("'+sap+'", "'+cant+'", "'+prec+'", "'+t+'", "'+desc+'", "'+envase+'", "'+d+'")');
+                }else{
+                    if(cant > 0)
+                    {
+                    tx.executeSql('UPDATE Temp_Pedidos SET cantidad = "'+cant+'", precio = "'+prec+'", total = "'+t+'", descuento = "'+d+'" WHERE producto = "'+sap+'"');
+                    }else{
+                    tx.executeSql('DELETE FROM Temp_Pedidos WHERE producto = "'+sap+'"');
+                    }
+                }
+            });
+        });
+
+
+        $sub_total = 0;
+
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT SUM(total) FROM Temp_Pedidos', [], function(tx, result2){
+                $sub_total = result2.rows.item(0)['SUM(total)'];
+            });
+        });
+
+
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT * FROM Temp_Pedidos', [], function(tx, result){
+                for(var i = 0; i < result.rows.length; i++)
+                {
+                    var row = result.rows.item(i);
+                    var precio = row['precio'];
+                    var cantidad = row['cantidad'];
+                    var multi = row['total'];
+                    var valor_descuento = 0;
+                    var descuento = Number(row['descuento']);
+                    var suma_sub_total = Number($sub_total);
+                    var iva = suma_sub_total * 0.12;
+                    var valor_total = suma_sub_total + iva;
+                    $("#sub_total").val(suma_sub_total.toFixed(2));
+                    $("#descuento").val(descuento.toFixed(2));
+                    $("#iva").val(iva.toFixed(2));
+                    $("#total").val(valor_total.toFixed(2));
+                    $("#content").append('<tr><td>'+row['descripcion']+'</td><td>'+row['envase']+'</td><td>'+precio+'</td><td>'+cantidad+'</td><td>'+multi+'</td></tr>');
+                    $("#pedido_corto").empty();
+                    $("#pedido_corto").append('<h4>TOTALES</h4>'+
+                        '<div class="row">'+
+                        '<div class="col-md-12">'+
+                        '<table class="table table-bordered">'+
+                        '<tr>'+
+                            '<td>'+
+                                'Sub-Total'+
+                            '</td>'+
+                            '<td>'+
+                                'Descuento'+
+                            '</td>'+
+                            '<td>'+
+                                '12% IVA'+
+                            '</td>'+
+                            '<td>'+
+                                'TOTAL'+
+                            '</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>'+
+                                +suma_sub_total.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +descuento.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +iva.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +valor_total.toFixed(2)+
+                            '</td>'+
+                        '</tr>'+
+                        '</table>'+
+                        '</div>'+
+                        '</div>');
+                }
+            });
+        });
+
+    });
+
     $("#cantidad_" + sap).change(function(){
-        var precio = $("#precio_" + sap).val();
-        var old = $("#old_" + sap).val();
-        var valor_descuento = $("#descuento").val();
-        var descuento = Number(valor_descuento) + (Number(old) - Number(precio));
-        var cantidad = $("#cantidad_" + sap).val();
-        var multi = precio * cantidad;
-        var sub_total = $("#sub_total").val();
-        var suma_sub_total = Number(sub_total) + Number(multi);
-        var iva = suma_sub_total * 0.12;
-        var valor_total = suma_sub_total + iva;
-        $("#calculo_" + sap).val(multi.toFixed(2));
-        $("#sub_total").val(suma_sub_total.toFixed(2));
-        $("#descuento").val(descuento.toFixed(2));
-        $("#iva").val(iva.toFixed(2));
-        $("#total").val(valor_total.toFixed(2));
-        $("#content").append('<tr><td>'+desc+'</td><td>'+envase+'</td><td>'+precio+'</td><td>'+cantidad+'</td><td>'+multi.toFixed(2)+'</td></tr>');
-        $("#pedido_corto").empty();
-        $("#pedido_corto").append('<h4>TOTALES</h4>'+
-            '<div class="row">'+
-            '<div class="col-md-12">'+
-            '<table class="table table-bordered">'+
-            '<tr>'+
-                '<td>'+
-                    'Sub-Total'+
-                '</td>'+
-                '<td>'+
-                    'Descuento'+
-                '</td>'+
-                '<td>'+
-                    '12% IVA'+
-                '</td>'+
-                '<td>'+
-                    'TOTAL'+
-                '</td>'+
-            '</tr>'+
-            '<tr>'+
-                '<td>'+
-                    +suma_sub_total.toFixed(2)+
-                '</td>'+
-                '<td>'+
-                    +descuento.toFixed(2)+
-                '</td>'+
-                '<td>'+
-                    +iva.toFixed(2)+
-                '</td>'+
-                '<td>'+
-                    +valor_total.toFixed(2)+
-                '</td>'+
-            '</tr>'+
-            '</table>'+
-            '</div>'+
-            '</div>');
+        $("#content").empty();
+        $("#content").append('<tr><th>DESCRIPCION</th><th>ENVASE</th><th>PRECIO</th><th>CANTIDAD</th><th>TOTAL</th></tr>');
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT * FROM Temp_Pedidos WHERE producto = "'+sap+'"', [], function(tx, result){
+                var cant = $("#cantidad_" + sap).val();
+                var prec = $("#precio_" + sap).val();
+                var old = $("#old_" + sap).val();
+                var o = cant * old;
+                var t = cant * prec;
+                var d = o - t;
+                var valor = (Math.round(t * 100) / 100).toFixed(2);
+                $("#calculo_" + sap).val(valor);
+                if(result.rows.length <= 0)
+                {
+                    tx.executeSql('INSERT INTO Temp_Pedidos (producto, cantidad, precio, total, descripcion, envase, descuento) VALUES ("'+sap+'", "'+cant+'", "'+prec+'", "'+t+'", "'+desc+'", "'+envase+'", "'+d+'")');
+                    var fam = familia.replace("/", "");
+                    var fam1 = fam.replace("  ", " ");
+                    var fam2 = fam1.replace(/ /g, "_");
+                    var enva = envase.replace(",", "_");
+                    var enva1 = enva.replace("/", "");
+                    var enva2 = enva1.replace(/ /g, "_");
+                    var promo = $("#producto_" + sap).val();
+                    var promo2 = $("#familia_" + fam2).val();
+                    var promo3 = $("#envase_" + enva2).val();
+                    var promo4 = $("#familia_" + fam2 + "_envase_" + enva2).val();
+                    $("#producto_" + sap).val(promo - $("#cantidad_" + sap).val());
+                    $("#familia_" + fam2).val(promo2 - $("#cantidad_" + sap).val());
+                    $("#envase_" + enva2).val(promo3 - $("#cantidad_" + sap).val());
+                    $("#familia_" + fam2 + "_envase_" + enva2).val(promo4 - $("#cantidad_" + sap).val());
+                }else{
+                    if(cant > 0)
+                    {
+                    tx.executeSql('UPDATE Temp_Pedidos SET cantidad = "'+cant+'", precio = "'+prec+'", total = "'+t+'", descuento = "'+d+'" WHERE producto = "'+sap+'"');
+                    }else{
+                    tx.executeSql('DELETE FROM Temp_Pedidos WHERE producto = "'+sap+'"');
+                    }
+
+                    for (var i = 0; i < result.rows.length; i++)
+                    {
+                        var row = result.rows.item(i);
+                        var cantidad_guardada = row['cantidad'];
+                        var fam = familia.replace("/", "");
+                        var fam1 = fam.replace("  ", " ");
+                        var fam2 = fam1.replace(/ /g, "_");
+                        var enva = envase.replace(",", "_");
+                        var enva1 = enva.replace("/", "");
+                        var enva2 = enva1.replace(/ /g, "_");
+                        var promo = $("#producto_" + sap).val();
+                        var promo2 = $("#familia_" + fam2).val();
+                        var promo3 = $("#envase_" + enva2).val();
+                        var promo4 = $("#familia_" + fam2 + "_envase_" + enva2).val();
+                        if($("#cantidad_" + sap).val() < cantidad_guardada)
+                        {
+                            var diferencia = cantidad_guardada - $("#cantidad_" + sap).val();
+                            $("#producto_" + sap).val(Number(promo) + Number(diferencia));
+                            $("#familia_" + fam2).val(Number(promo2) + Number(diferencia));
+                            $("#envase_" + enva2).val(Number(promo3) + Number(diferencia));
+                            $("#familia_" + fam2 + "_envase_" + enva2).val(Number(promo4) + Number(diferencia));
+                        }
+                        else
+                        {
+                            $("#producto_" + sap).val(promo - $("#cantidad_" + sap).val());
+                            $("#familia_" + fam2).val(promo2 - $("#cantidad_" + sap).val());
+                            $("#envase_" + enva2).val(promo3 - $("#cantidad_" + sap).val());
+                            $("#familia_" + fam2 + "_envase_" + enva2).val(promo4 - $("#cantidad_" + sap).val());
+                        }
+                    }
+                }
+            });
+        });
+
+
+        $sub_total = 0;
+
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT SUM(total) FROM Temp_Pedidos', [], function(tx, result2){
+                $sub_total = result2.rows.item(0)['SUM(total)'];
+            });
+        });
+
+
+        db3.transaction(function(tx){
+            tx.executeSql('SELECT * FROM Temp_Pedidos', [], function(tx, result){
+                for(var i = 0; i < result.rows.length; i++)
+                {
+                    var row = result.rows.item(i);
+                    var precio = row['precio'];
+                    var cantidad = row['cantidad'];
+                    var multi = Number(row['total']);
+                    var valor_descuento = 0;
+                    var descuento = Number(row['descuento']);
+                    var suma_sub_total = Number($sub_total);
+                    var iva = suma_sub_total * 0.12;
+                    var valor_total = suma_sub_total + iva;
+                    $("#sub_total").val(suma_sub_total.toFixed(2));
+                    $("#descuento").val(descuento.toFixed(2));
+                    $("#iva").val(iva.toFixed(2));
+                    $("#total").val(valor_total.toFixed(2));
+                    $("#content").append('<tr><td>'+row['descripcion']+'</td><td>'+row['envase']+'</td><td>'+precio+'</td><td>'+cantidad+'</td><td>'+multi.toFixed(2)+'</td></tr>');
+                    $("#pedido_corto").empty();
+                    $("#pedido_corto").append('<h4>TOTALES</h4>'+
+                        '<div class="row">'+
+                        '<div class="col-md-12">'+
+                        '<table class="table table-bordered">'+
+                        '<tr>'+
+                            '<td>'+
+                                'Sub-Total'+
+                            '</td>'+
+                            '<td>'+
+                                'Descuento'+
+                            '</td>'+
+                            '<td>'+
+                                '12% IVA'+
+                            '</td>'+
+                            '<td>'+
+                                'TOTAL'+
+                            '</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>'+
+                                +suma_sub_total.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +descuento.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +iva.toFixed(2)+
+                            '</td>'+
+                            '<td>'+
+                                +valor_total.toFixed(2)+
+                            '</td>'+
+                        '</tr>'+
+                        '</table>'+
+                        '</div>'+
+                        '</div>');
+                }
+            });
+        });
+
     });
 }
 
-function populateDescuentos(sap, l)
+function populateDescuentos(sap, l, descripcion)
 {
     db3.transaction(function(tx){
-        tx.executeSql('SELECT * FROM Descuentos WHERE desde <= "'+fecha+'" AND hasta >= "'+fecha+'" AND lista = "'+l+'"', [], function(tx, result){
+        tx.executeSql('SELECT * FROM Descuentos WHERE desde <= "'+fecha+'" AND hasta >= "'+fecha+'"', [], function(tx, result){
             for(var j = 0; j < result.rows.length; j++)
             {
                 var row = result.rows.item(j);
                 var desc = row['p' + sap];
-                var precio_old = $("#precio_" + sap).val();
-                var porcentaje_desc = precio_old * (desc / 100);
-                var precio_new = precio_old - porcentaje_desc;
-                $("#old_" + sap).val(precio_old);
-                $("#precio_" + sap).val(precio_new.toFixed(2));
-                if (desc != 0) 
-                    {
-                        $("#desc_" + sap).empty();
-                        $("#desc_" + sap).append('<b style="color:blue">Descuento del '+desc+'%</b>');
-                    }
+                var poc_desc = desc / 100;
+                var lista = row['lista'];
 
+                if(lista == "MIX_LA_LE")
+                {
+                    if (l == "LA" || l == "LE")
+                    {
+                        if (desc > 0)
+                        {
+                            var valor = $("#precio_" + sap + " option:nth-child(2)").val();
+                            var valor2 = valor * poc_desc;
+                            var valor3 = valor - valor2;
+                            $("#descButton_" + sap).prop('disabled', false);
+                            $("#descButton_" + sap).click(function(){
+                               if($("#descButton_" + sap).hasClass("btn btn-xs btn-danger"))
+                               {
+                                    $("#descButton_" + sap).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
+                                    $("#descButton_" + sap).val("ON");
+                                    $("#precio_" + sap + " option:nth-child(2)").text(valor3.toFixed(2));
+                               }else{
+                                    $("#descButton_" + sap).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
+                                    $("#descButton_" + sap).val("OFF");
+                                    $("#precio_" + sap + " option:nth-child(2)").text(valor);
+                               }
+                            });
+                        }
+                    }
+                }
+
+                if(lista == "LA")
+                {
+                    if (desc > 0)
+                        {
+                            var valor = $("#precio_" + sap + " option:nth-child(1)").val();
+                            var valor2 = valor * poc_desc;
+                            var valor3 = valor - valor2;
+                            $("#descButton_" + sap).prop('disabled', false);
+                            $("#descButton_" + sap).click(function(){
+                               if($(this).hasClass("btn btn-xs btn-danger"))
+                               {
+                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
+                                    $(this).val("ON");
+                                    $("#precio_" + sap + " option:nth-child(1)").text(valor3.toFixed(2));
+                               }else{
+                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
+                                    $(this).val("OFF");
+                                    $("#precio_" + sap + " option:nth-child(1)").text(valor);
+                               }
+                            });
+                        }
+                }
+
+                if(lista == "LE")
+                {
+                    if (desc > 0)
+                        {
+                            var valor = $("#precio_" + sap + " option:nth-child(3)").val();
+                            var valor2 = valor * poc_desc;
+                            var valor3 = valor - valor2;
+                            $("#descButton_" + sap).prop('disabled', false);
+                            $("#descButton_" + sap).click(function(){
+                               if($(this).hasClass("btn btn-xs btn-danger"))
+                               {
+                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
+                                    $(this).val("ON");
+                                    $("#precio_" + sap + " option:nth-child(3)").text(valor3.toFixed(2));
+                               }else{
+                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
+                                    $(this).val("OFF");
+                                    $("#precio_" + sap + " option:nth-child(3)").text(valor);
+                               }
+                            });
+                        }
+                }
+
+                if(lista == "p54")
+                {
+                    if (desc > 0)
+                        {
+                            var valor = $("#precio_" + sap + " option:nth-child(2)").val();
+                            var valor2 = valor * poc_desc;
+                            var valor3 = valor - valor2;
+                            $("#descButton_" + sap).prop('disabled', false);
+                            $("#descButton_" + sap).click(function(){
+                               if($(this).hasClass("btn btn-xs btn-danger"))
+                               {
+                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
+                                    $(this).val("ON");
+                                    $("#precio_" + sap + " option:nth-child(2)").text(valor3.toFixed(2));
+                               }else{
+                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
+                                    $(this).val("OFF");
+                                    $("#precio_" + sap + " option:nth-child(2)").text(valor);
+                               }
+                            });
+                        }
+                }
             }
         });
     });
@@ -297,9 +630,9 @@ function cargarListas(tx){
             for (var i = 0; i < result.rows.length; i++)
             {
                 var row = result.rows.item(i);
-                lista_productos = lista_productos + ", p" + row['sap'] + " TEXT";
-                lista_productos1 = lista_productos1 + ", p" + row['sap'] + "";
-                lista_productos2 = lista_productos2 + ', "' + $("#cantidad_" + row['sap']).val() + '"';
+                lista_productos = lista_productos + ", p" + row['sap'] + " TEXT, precio_" + row['sap'] + " TEXT";
+                lista_productos1 = lista_productos1 + ", p" + row['sap'] + ", precio_" + row['sap'] + "";
+                lista_productos2 = lista_productos2 + ', "' + $("#cantidad_" + row['sap']).val() + '", "' + $("#precio_" + row['sap']).val() + '"';
             }
         });
         db3.transaction(guardarPedido,errorCB,successCB);
@@ -317,549 +650,44 @@ $("#email").change(function(){
 $("#email1").val($("#email").val());
 });
 
-function promociones(tx){
+function promociones(tx)
+{
     tx.executeSql('SELECT * FROM Promociones',[],function(tx, result){
-
         for (var i = 0; i < result.rows.length; i++)
         {
-            var today = new Date();
-            var dd = today.getDate();
-            var mm = today.getMonth()+1;//January is 0, so always add + 1
-
-            var yyyy = today.getFullYear();
-            if(dd<10){dd='0'+dd}
-            if(mm<10){mm='0'+mm}
-            today = yyyy+'-'+mm+'-'+dd;
 
             var row = result.rows.item(i);
-
-            if(row['desde'] <= today && row['hasta'] >= today)
-            {
-                alert("Existen Promociones vigentes " +row['promo']);
-                if(row['familia'] == 1)
+            alert("Existen promociones vigentes: " + row['promo']);
+            $.each( row, function( key, value ) {
+              if(value > 0)
+              {
+                if(key != "id" && key != "familia" && key != "envase" && key != "familia_envase" && key != "producto")
                 {
-
-                    $("#alerta").append("<b style='color:red'>"+row['promo']+"</b><br>");
-                    if(row['familia_MOTORES_A_GASOLINA'] > 0)
+                    var key1 = key.replace(/_/g, " ");
+                    if(key.indexOf('producto') > -1)
                     {
-                    $("#alerta").append("<b style='color:red'>MOTORES_A_GASOLINA "+row['familia_MOTORES_A_GASOLINA']+"</b><br>");
+                        key1 = key1.substring(9, 16);
+                        db3.transaction(function(tr){
+                            tr.executeSql('SELECT * FROM Productos WHERE sap = "'+key1+'"', [], function(tr, result2){
+                                for(var j = 0; j < result2.rows.length; j++)
+                                {
+                                    var r = result2.rows.item(j);
+                                    $("#" + key1).empty();
+                                    $("#" + key1).append(r['descripcion']);
+                                }
+                            });
+                        });
                     }
-                    if(row['familia_MOTOS_FUERA_DE_BORDA'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>MOTOS_FUERA_DE_BORDA "+row['familia_MOTOS_FUERA_DE_BORDA']+"</b><br>");
-                    }
-                    if(row['familia_GRASA_AUTOMOTRIZ'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>GRASA_AUTOMOTRIZ "+row['familia_GRASA_AUTOMOTRIZ']+"</b><br>");
-                    }
-                    if(row['familia_HIDRAULICOS'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>HIDRAULICOS "+row['familia_HIDRAULICOS']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>MOTORES_A_DIESEL "+row['familia_MOTORES_A_DIESEL']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_AUTOMATICA'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>TRANSMISION_AUTOMATICA "+row['familia_TRANSMISION_AUTOMATICA']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>TRANSMISION_MECANICA_DIFERENCIAL "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL']+"</b><br>");
-                    }
+                    $("#alerta1").append(''+
+                    '<tr>'+
+                    '<td id="'+key1+'">'+key1+'</td>'+
+                    '<td><input type="text" id="promo_'+key+'" class="form-control" value="'+value+'" readonly></td>'+
+                    '<td><input type="text" id="'+key+'" class="form-control" value="'+value+'" readonly></td>'+
+                    '</tr>'+
+                    '');
                 }
-                if(row['envase'] == 1)
-                {
-                    $("#alerta").append("<b style='color:red'>"+row['promo']+"</b><br>");
-                    if(row['envase_2_5_gal_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>2,5 gal "+row['envase_2_5_gal_']+"</b><br>");
-                    }
-                    if(row['envase_6X4_LBS_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>6X4 LBS "+row['envase_6X4_LBS_']+"</b><br>");
-                    }
-                    if(row['envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>BALDE "+row['envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>CJ 121 "+row['envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['envase_CJ_41_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>CJ 41 "+row['envase_CJ_41_']+"</b><br>");
-                    }
-                    if(row['envase_CJ_61_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>CJ 61 "+row['envase_CJ_61_']+"</b><br>");
-                    }
-                    if(row['envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>TANQUE "+row['envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['envase_CJ_41'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>CJ 41 "+row['envase_CJ_41']+"</b><br>");
-                    }
-                }
-                if(row['familia_envase'] == 1)
-                {
-                    $("#alerta").append("<b style='color:red'>"+row['promo']+"</b><br>");
-                    if(row['familia_MOTORES_A_GASOLINA_envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>MOTORES_A_GASOLINA, envase CJ 121 "+row['familia_MOTORES_A_GASOLINA_envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_GASOLINA_envase_CJ_41_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia MOTORES_A_GASOLINA, envase_CJ_41 "+row['familia_MOTORES_A_GASOLINA_envase_CJ_41_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_GASOLINA_envase_CJ_61_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_GASOLINA, envase_CJ_61 "+row['familia_MOTORES_A_GASOLINA_envase_CJ_61_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_GASOLINA_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_GASOLINA, envase_TANQUE "+row['familia_MOTORES_A_GASOLINA_envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_GASOLINA_envase_CJ_41'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_GASOLINA, envase_CJ_41 "+row['familia_MOTORES_A_GASOLINA_envase_CJ_41']+"</b><br>");
-                    }
-                    if(row['familia_MOTOS_FUERA_DE_BORDA_envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTOS_FUERA_DE_BORDA, envase_CJ_121 "+row['familia_MOTOS_FUERA_DE_BORDA_envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['familia_MOTOS_FUERA_DE_BORDA_envase_CJ_61_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTOS_FUERA_DE_BORDA, envase_CJ_61 "+row['familia_MOTOS_FUERA_DE_BORDA_envase_CJ_61_']+"</b><br>");
-                    }
-                    if(row['familia_GRASA_AUTOMOTRIZ_envase_6X4_LBS_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_GRASA_AUTOMOTRIZ, envase_6X4_LBS "+row['familia_GRASA_AUTOMOTRIZ_envase_6X4_LBS_']+"</b><br>");
-                    }
-                    if(row['familia_GRASA_AUTOMOTRIZ_envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_GRASA_AUTOMOTRIZ, envase_BALDE "+row['familia_GRASA_AUTOMOTRIZ_envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['familia_GRASA_AUTOMOTRIZ_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_GRASA_AUTOMOTRIZ, envase_TANQUE "+row['familia_GRASA_AUTOMOTRIZ_envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['familia_HIDRAULICOS_envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_HIDRAULICOS, envase_BALDE "+row['familia_HIDRAULICOS_envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['familia_HIDRAULICOS_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_HIDRAULICOS, envase_TANQUE "+row['familia_HIDRAULICOS_envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_2_5_gal_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_2_5_gal "+row['familia_MOTORES_A_DIESEL_envase_2_5_gal_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_BALDE "+row['familia_MOTORES_A_DIESEL_envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_CJ_121 "+row['familia_MOTORES_A_DIESEL_envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_CJ_41_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_CJ_41 "+row['familia_MOTORES_A_DIESEL_envase_CJ_41_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_CJ_61_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_CJ_61 "+row['familia_MOTORES_A_DIESEL_envase_CJ_61_']+"</b><br>");
-                    }
-                    if(row['familia_MOTORES_A_DIESEL_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_MOTORES_A_DIESEL, envase_TANQUE "+row['familia_MOTORES_A_DIESEL_envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_AUTOMATICA_envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_AUTOMATICA, envase_BALDE "+row['familia_TRANSMISION_AUTOMATICA_envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_AUTOMATICA_envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_AUTOMATICA, envase_CJ_121 "+row['familia_TRANSMISION_AUTOMATICA_envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_AUTOMATICA_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_AUTOMATICA, envase_TANQUE "+row['familia_TRANSMISION_AUTOMATICA_envase_TANQUE_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_BALDE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_MECANICA_DIFERENCIAL, envase_BALDE "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_BALDE_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_121_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_MECANICA_DIFERENCIAL, envase_CJ_121 "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_121_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_41_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_MECANICA_DIFERENCIAL, envase_CJ_41 "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_41_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_61_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_MECANICA_DIFERENCIAL, envase_CJ_61 "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_CJ_61_']+"</b><br>");
-                    }
-                    if(row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_TANQUE_'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>familia_TRANSMISION_MECANICA_DIFERENCIAL, envase_TANQUE "+row['familia_TRANSMISION_MECANICA_DIFERENCIAL_envase_TANQUE_']+"</b><br>");
-                    }
-                }
-                if(row['producto'] == 1)
-                {
-                    $("#alerta").append("<b style='color:red'>"+row['promo']+"</b><br>");
-                    if(row['producto_98HF24'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HF24 "+row['producto_98HF24']+"</b><br>");
-                    }
-                    if(row['producto_98HC64'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HC64 "+row['producto_98HC64']+"</b><br>");
-                    }
-                    if(row['producto_98BB06'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98BB06 "+row['producto_98BB06']+"</b><br>");
-                    }
-                    if(row['producto_110125'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110125 "+row['producto_110125']+"</b><br>");
-                    }
-                    if(row['producto_98CL02'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98CL02 "+row['producto_98CL02']+"</b><br>");
-                    }
-                    if(row['producto_98CL01'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98CL01 "+row['producto_98CL01']+"</b><br>");
-                    }
-                    if(row['producto_110124'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110124 "+row['producto_110124']+"</b><br>");
-                    }
-                    if(row['producto_98LE18'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE18 "+row['producto_98LE18']+"</b><br>");
-                    }
-                    if(row['producto_110126'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110126 "+row['producto_110126']+"</b><br>");
-                    }
-                    if(row['producto_110123'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110123 "+row['producto_110123']+"</b><br>");
-                    }
-                    if(row['producto_98LE19'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE19 "+row['producto_98LE19']+"</b><br>");
-                    }
-                    if(row['producto_110122'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110122 "+row['producto_110122']+"</b><br>");
-                    }
-                    if(row['producto_110136'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110136 "+row['producto_110136']+"</b><br>");
-                    }
-                    if(row['producto_98LE17'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE17 "+row['producto_98LE17']+"</b><br>");
-                    }
-                    if(row['producto_110114'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110114 "+row['producto_110114']+"</b><br>");
-                    }
-                    if(row['producto_98HC76'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HC76 "+row['producto_98HC76']+"</b><br>");
-                    }
-                    if(row['producto_98CL03'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98CL03 "+row['producto_98CL03']+"</b><br>");
-                    }
-                    if(row['producto_98CL04'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98CL04 "+row['producto_98CL04']+"</b><br>");
-                    }
-                    if(row['producto_110115'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_110115 "+row['producto_110115']+"</b><br>");
-                    }
-                    if(row['producto_98317C'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98317C "+row['producto_98317C']+"</b><br>");
-                    }
-                    if(row['producto_98AE47'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98AE47 "+row['producto_98AE47']+"</b><br>");
-                    }
-                    if(row['producto_98GM24'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GM24 "+row['producto_98GM24']+"</b><br>");
-                    }
-                    if(row['producto_115058'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_115058 "+row['producto_115058']+"</b><br>");
-                    }
-                    if(row['producto_98092M'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98092M "+row['producto_98092M']+"</b><br>");
-                    }
-                    if(row['producto_98Q248'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98Q248 "+row['producto_98Q248']+"</b><br>");
-                    }
-                    if(row['producto_989459'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_989459 "+row['producto_989459']+"</b><br>");
-                    }
-                    if(row['producto_985997'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_985997 "+row['producto_985997']+"</b><br>");
-                    }
-                    if(row['producto_98HM03'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HM03 "+row['producto_98HM03']+"</b><br>");
-                    }
-                    if(row['producto_98HM02'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HM02 "+row['producto_98HM02']+"</b><br>");
-                    }
-                    if(row['producto_98Y611'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98Y611 "+row['producto_98Y611']+"</b><br>");
-                    }
-                    if(row['producto_98E325'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98E325 "+row['producto_98E325']+"</b><br>");
-                    }
-                    if(row['producto_98KJ22'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98KJ22 "+row['producto_98KJ22']+"</b><br>");
-                    }
-                    if(row['producto_98JJ11'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JJ11 "+row['producto_98JJ11']+"</b><br>");
-                    }
-                    if(row['producto_116934'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_116934 "+row['producto_116934']+"</b><br>");
-                    }
-                    if(row['producto_118990'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_118990 "+row['producto_118990']+"</b><br>");
-                    }
-                    if(row['producto_98JA00'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JA00 "+row['producto_98JA00']+"</b><br>");
-                    }
-                    if(row['producto_98JN55'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JN55 "+row['producto_98JN55']+"</b><br>");
-                    }
-                    if(row['producto_98LE13'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE13 "+row['producto_98LE13']+"</b><br>");
-                    }
-                    if(row['producto_98GZ42'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GZ42 "+row['producto_98GZ42']+"</b><br>");
-                    }
-                    if(row['producto_98JN57'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JN57 "+row['producto_98JN57']+"</b><br>");
-                    }
-                    if(row['producto_98JN56'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JN56 "+row['producto_98JN56']+"</b><br>");
-                    }
-                    if(row['producto_98HT42'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HT42 "+row['producto_98HT42']+"</b><br>");
-                    }
-                    if(row['producto_98LE12'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE12 "+row['producto_98LE12']+"</b><br>");
-                    }
-                    if(row['producto_98HT43'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HT43 "+row['producto_98HT43']+"</b><br>");
-                    }
-                    if(row['producto_98HT46'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HT46 "+row['producto_98HT46']+"</b><br>");
-                    }
-                    if(row['producto_98HT45'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HT45 "+row['producto_98HT45']+"</b><br>");
-                    }
-                    if(row['producto_98G347'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98G347 "+row['producto_98G347']+"</b><br>");
-                    }
-                    if(row['producto_98914D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98914D "+row['producto_98914D']+"</b><br>");
-                    }
-                    if(row['producto_98277D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98277D "+row['producto_98277D']+"</b><br>");
-                    }
-                    if(row['producto_98246D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98246D "+row['producto_98246D']+"</b><br>");
-                    }
-                    if(row['producto_98FN88'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98FN88 "+row['producto_98FN88']+"</b><br>");
-                    }
-                    if(row['producto_98K942'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98K942 "+row['producto_98K942']+"</b><br>");
-                    }
-                    if(row['producto_98913D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98913D "+row['producto_98913D']+"</b><br>");
-                    }
-                    if(row['producto_98218D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98218D "+row['producto_98218D']+"</b><br>");
-                    }
-                    if(row['producto_98096R'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98096R "+row['producto_98096R']+"</b><br>");
-                    }
-                    if(row['producto_98892D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98892D "+row['producto_98892D']+"</b><br>");
-                    }
-                    if(row['producto_98K921'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98K921 "+row['producto_98K921']+"</b><br>");
-                    }
-                    if(row['producto_98GY83'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY83 "+row['producto_98GY83']+"</b><br>");
-                    }
-                    if(row['producto_98K192'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98K192 "+row['producto_98K192']+"</b><br>");
-                    }
-                    if(row['producto_120000'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_120000 "+row['producto_120000']+"</b><br>");
-                    }
-                    if(row['producto_98HE54'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HE54 "+row['producto_98HE54']+"</b><br>");
-                    }
-                    if(row['producto_98JD05'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98JD05 "+row['producto_98JD05']+"</b><br>");
-                    }
-                    if(row['producto_98HB92'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HB92 "+row['producto_98HB92']+"</b><br>");
-                    }
-                    if(row['producto_98LE14'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE14 "+row['producto_98LE14']+"</b><br>");
-                    }
-                    if(row['producto_98GY97'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY97 "+row['producto_98GY97']+"</b><br>");
-                    }
-                    if(row['producto_98GY96'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY96 "+row['producto_98GY96']+"</b><br>");
-                    }
-                    if(row['producto_98HM25'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HM25 "+row['producto_98HM25']+"</b><br>");
-                    }
-                    if(row['producto_98GZ02'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GZ02 "+row['producto_98GZ02']+"</b><br>");
-                    }
-                    if(row['producto_98GY93'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY93 "+row['producto_98GY93']+"</b><br>");
-                    }
-                    if(row['producto_98GY94'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY94 "+row['producto_98GY94']+"</b><br>");
-                    }
-                    if(row['producto_98GY92'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98GY92 "+row['producto_98GY92']+"</b><br>");
-                    }
-                    if(row['producto_98456N'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98456N "+row['producto_98456N']+"</b><br>");
-                    }
-                    if(row['producto_98LE15'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE15 "+row['producto_98LE15']+"</b><br>");
-                    }
-                    if(row['producto_98HJ28'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HJ28 "+row['producto_98HJ28']+"</b><br>");
-                    }
-                    if(row['producto_98HJ37'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HJ37 "+row['producto_98HJ37']+"</b><br>");
-                    }
-                    if(row['producto_98447N'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98447N "+row['producto_98447N']+"</b><br>");
-                    }
-                    if(row['producto_98LE16'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98LE16 "+row['producto_98LE16']+"</b><br>");
-                    }
-                    if(row['producto_98G758'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98G758 "+row['producto_98G758']+"</b><br>");
-                    }
-                    if(row['producto_98K073'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98K073 "+row['producto_98K073']+"</b><br>");
-                    }
-                    if(row['producto_98HM26'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HM26 "+row['producto_98HM26']+"</b><br>");
-                    }
-                    if(row['producto_98699D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98699D "+row['producto_98699D']+"</b><br>");
-                    }
-                    if(row['producto_98887D'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98887D "+row['producto_98887D']+"</b><br>");
-                    }
-                    if(row['producto_98HL93'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HL93 "+row['producto_98HL93']+"</b><br>");
-                    }
-                    if(row['producto_98HM00'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98HM00 "+row['producto_98HM00']+"</b><br>");
-                    }
-                    if(row['producto_98E338'] > 0)
-                    {
-                    $("#alerta").append("<b style='color:red'>producto_98E338 "+row['producto_98E338']+"</b><br>");
-                    }
-
-
-                }
-            }
+              }
+            });
         }
     });
 }

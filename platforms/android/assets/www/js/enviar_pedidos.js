@@ -1,7 +1,7 @@
 var db = window.openDatabase("Productos", "1.0", "Productos", 65535);
 
 function errorCB(err) {
-    alert("Error processing SQL: "+err.code);
+    alert("Tablas vacias, genere pedido para poder enviar!");
 }
 
 //select all from SoccerPlayer
@@ -25,7 +25,7 @@ function querySuccess(tx, result){
 
             },
             error: function(data, t, s){
-                alert(s);
+                alert("Data: " + data + ", Throw: " + t + ", Error: " + s);
             }
         });
 

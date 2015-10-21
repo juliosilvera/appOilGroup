@@ -103,21 +103,27 @@ function pullPedidos(tx, result){
 //Update Table Clientes
 function updateClientes(tx) {
     tx.executeSql('DROP TABLE IF EXISTS Clientes');
-    tx.executeSql('CREATE TABLE IF NOT EXISTS Clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo INTEGER, cliente TEXT, provincia TEXT, ciudad TEXT, tipo_negocio TEXT, lista_precios TEXT, asesor INTEGER, email TEXT)');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS Clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo TEXT, cliente TEXT, provincia TEXT, ciudad TEXT, lista_precios TEXT, asesor TEXT, email TEXT)');
     db4.transaction(function(tx){
         tx.executeSql('SELECT * FROM CodAsesor',[],function(tx, result){
             var row = result.rows.item(0);
             //alert(row['codAsesor']);
             var cod_asesor = row['codAsesor'];
             $.post("http://mobil.gotrade.com.ec/get_clientes", {asesor: cod_asesor}, function(data, status){
+                        var count_clientes = 0;
                         $.each(data, function(i,v){
                             db1.transaction(function(tra){
-                                tra.executeSql('INSERT INTO Clientes (id, codigo, cliente, provincia, ciudad, tipo_negocio, lista_precios, asesor, email) VALUES ('+v.id+', '+v.codigo+', "'+v.cliente+'", "'+v.provincia+'", "'+v.ciudad+'", "'+v.tipo_negocio+'", "'+v.lista_precios+'", '+v.asesor+', "'+v.email+'")');
+                                count_clientes++;
+                                tra.executeSql('INSERT INTO Clientes (id, codigo, cliente, provincia, ciudad, lista_precios, asesor, email) VALUES ('+v.id+', '+v.codigo+', "'+v.cliente+'", "'+v.provincia+'", "'+v.ciudad+'", "'+v.lista_precios+'", '+v.asesor+', "'+v.email+'")');
+                                if(count_clientes == data.length)
+                                {
+                                    $("#status1").append('<center><h3><span class="label label-success">Datos de Clientes Actualizados</span></center></h3><hr />');
+                                }
                             });
                         });
 
                     }).done(function(data){
-                            $("#status1").append('<center><h3><span class="label label-success">Datos de Clientes Actualizados</span></center></h3><hr />');
+                            console.log("Clientes descargados");
                             //alert(JSON.stringify(data));
                               }).fail(function(xhr, textStatus, errorThrown){
                               alert("Falla al conectar con el Servidor!, Error: " + errorThrown);
@@ -130,15 +136,22 @@ function updateClientes(tx) {
 //Update table Productos
 function updateProductos(tx) {
     tx.executeSql('DROP TABLE IF EXISTS Productos');
-    tx.executeSql('CREATE TABLE IF NOT EXISTS Productos (id INTEGER PRIMARY KEY AUTOINCREMENT, sap TEXT, descripcion TEXT, envase TEXT, ge TEXT, p54 TEXT, p56 TEXT, la TEXT, mix_la_le TEXT, lista_le TEXT, familia TEXT)');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS Productos (id INTEGER PRIMARY KEY AUTOINCREMENT, sap TEXT, descripcion TEXT, envase TEXT, ge TEXT, p54 TEXT, LA TEXT, MIX_LA_LE TEXT, LE TEXT, ALVAREZ TEXT, AUTOTEC TEXT, AUTODELTA TEXT, AUTOLIDER TEXT, AVILES TEXT, CINASCAR TEXT, CLEANEXPRESS TEXT, DAVILA TEXT, DINA TEXT, FAST_RENTA_C TEXT, FATOSLA TEXT, GARNER TEXT, GAS_MADRID TEXT, ITAL_MOVIMENTI TEXT, ITAL_LLANTA TEXT, LAVCA TEXT, LLANTA_BAJA TEXT, OJEDA TEXT, ONA TEXT, REYES TEXT, RODRIGUEZ TEXT, SAVREH TEXT, TALLERES_DE_SERVICIOS_AUTOM TEXT, TROYA TEXT, FREDY_CHAVEZ TEXT, PETROCEANO TEXT, MAYORISTAS TEXT, familia TEXT, desc_la TEXT, desc_mix_la_le TEXT)');
     $.get("http://mobil.gotrade.com.ec/get_productos", function(data, status){
+            var count_pedidos = 0;
             $.each(data, function(i,v){
                 db3.transaction(function(tra){
-                    tra.executeSql('INSERT INTO Productos (id, sap, descripcion, envase, ge, p54, p56, la, mix_la_le, lista_le, familia) VALUES ('+v.id+', "'+v.sap+'", "'+v.descripcion+'", "'+v.envase+'", "'+v.ge+'", "'+v.p54+'", "'+v.p56+'", "'+v.la+'", "'+v.mix_la_le+'", "'+v.lista_le+'", "'+v.familia+'")');
+                    count_pedidos++;
+                    tra.executeSql('INSERT INTO Productos (sap, descripcion, envase, ge, p54, LA, MIX_LA_LE, LE, ALVAREZ, AUTOTEC, AUTODELTA, AUTOLIDER, AVILES, CINASCAR, CLEANEXPRESS, DAVILA, DINA, FAST_RENTA_C, FATOSLA, GARNER, GAS_MADRID, ITAL_MOVIMENTI, ITAL_LLANTA, LAVCA, LLANTA_BAJA, OJEDA, ONA, REYES, RODRIGUEZ, SAVREH, TALLERES_DE_SERVICIOS_AUTOM, TROYA, FREDY_CHAVEZ, PETROCEANO, MAYORISTAS, familia) VALUES ("'+v.sap+'", "'+v.descripcion+'", "'+v.envase+'", "'+v.ge+'", "'+v.p54+'", "'+v.LA+'", "'+v.MIX_LA_LE+'", "'+v.LE+'", "'+v.ALVAREZ+'", "'+v.AUTOTEC+'", "'+v.AUTODELTA+'", "'+v.AUTOLIDER+'", "'+v.AVILES+'", "'+v.CINASCAR+'", "'+v.CLEANEXPRESS+'", "'+v.DAVILA+'", "'+v.DINA+'", "'+v.FAST_RENTA_C+'", "'+v.FATOSLA+'", "'+v.GARNER+'", "'+v.GAS_MADRID+'", "'+v.ITAL_MOVIMENTI+'", "'+v.ITAL_LLANTA+'", "'+v.LAVCA+'", "'+v.LLANTA_BAJA+'", "'+v.OJEDA+'", "'+v.ONA+'", "'+v.REYES+'", "'+v.RODRIGUEZ+'", "'+v.SAVREH+'", "'+v.TALLERES_DE_SERVICIOS_AUTOM+'", "'+v.TROYA+'", "'+v.FREDY_CHAVEZ+'", "'+v.PETROCEANO+'", "'+v.MAYORISTAS+'", "'+v.familia+'")');
+                    if (count_pedidos == data.length)
+                    {
+                        $("#status1").append('<center><h3><span class="label label-success">Datos de Productos Actualizados</span></h3></center><hr />');
+                    }
                 });
             });
+
         }).done(function(){
-                  $("#status1").append('<center><h3><span class="label label-success">Datos de Productos Actualizados</span></h3></center><hr />');
+                    console.log("Productos descargados");
                   }).fail(function(){
                   alert("Falla al conectar con el Servidor!, Error: " + errorThrown);
                   });
@@ -150,6 +163,7 @@ function updateProductos(tx) {
 function updateDescuentos(tx) {
     tx.executeSql('DROP TABLE IF EXISTS Descuentos');
     $.get("http://mobil.gotrade.com.ec/get_descuentos", function(data, status){
+            var count_desc = 0;
             $.each(data, function(i,v){
                 var keys1 = $.map(v, function(v, k){ return k + " TEXT"; });
 
@@ -160,11 +174,17 @@ function updateDescuentos(tx) {
                 var values = $.map(v, function(v, k){ return '"' + v + '"'; });
 
                 db3.transaction(function(tx){
+                    count_desc++;
                     tx.executeSql('INSERT INTO Descuentos ('+keys+') VALUES ('+values+')');
+                    if(count_desc == data.length)
+                    {
+                        $("#status1").append('<center><h3><span class="label label-success">Datos de Descuentos Actualizados</span></h3></center><hr />');
+                    }
                 });
             });
+
         }).done(function(){
-        $("#status1").append('<center><h3><span class="label label-success">Datos de Descuentos Actualizados</span></h3></center><hr />');
+        console.log("Descuentos descargados");
         }).fail(function(){
         alert("Falla al conectar con el Servidor!, Error: " + errorThrown);
         });
@@ -177,6 +197,7 @@ function updateDescuentos(tx) {
 function updatePromociones(tx) {
     tx.executeSql('DROP TABLE IF EXISTS Promociones');
     $.get("http://mobil.gotrade.com.ec/get_promociones", function(data, status){
+            var count = 0;
             $.each(data, function(i,v){
                 var keys1 = $.map(v, function(v, k){ return k + " TEXT"; });
 
@@ -187,11 +208,17 @@ function updatePromociones(tx) {
                 var values = $.map(v, function(v, k){ return '"' + v + '"'; });
 
                 db3.transaction(function(tx){
+                    count++;
                     tx.executeSql('INSERT INTO Promociones ('+keys+') VALUES ('+values+')');
+                    if(count == data.length)
+                    {
+                        $("#status1").append('<center><h3><span class="label label-success">Datos de Promociones Actualizados</span></h3></center><hr />');
+                    }
                 });
             });
+
         }).done(function(){
-                   $("#status1").append('<center><h3><span class="label label-success">Datos de Promociones Actualizados</span></h3></center><hr />');
+                    console.log("promociones descargadas");
                   }).fail(function(){
                   alert("Falla al conectar con el Servidor!, Error: " + errorThrown);
                   });

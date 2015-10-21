@@ -13,6 +13,7 @@
         <!-- Optional theme -->
         <link rel="stylesheet" href="css/bootstrap-theme.min.css">
         <link href="css/select2.min.css" rel="stylesheet" />
+        <link href="css/jquery-ui.min.css" rel="stylesheet" />
         <link rel="stylesheet" type="text/css" href="css/pedidos.css">
         <title>Oil Group</title>
     </head>
@@ -27,11 +28,11 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="#">Oil Group - Pedidos</a>
+                <a class="navbar-brand" href="#">Pedidos</a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.html">Actualizar</a></li>
                     <li class="dropdown">
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Clusterización <span class="caret"></span></a>
                       <ul class="dropdown-menu">
@@ -86,7 +87,7 @@
                 <hr />
             </div>
             <h4>Productos</h4>
-            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true" style="width:100%">
               <div id="lista_productos"></div>
             </div>
             <h4>TOTALES</h4>
@@ -138,7 +139,21 @@
                     <h4 class="modal-title" id="myModalLabel">Alerta de Promociones</h4>
                   </div>
                   <div class="modal-body">
-                    <div id="alerta"></div>
+                    <div id="alerta">
+                        <div class="col-md-6">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>PRODUCTO / ENVASE / FAMILIA</th>
+                                <th>CANTIDAD PARA APLICAR</th>
+                                <th>FALTA PARA COMPLETAR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerta1">
+                            </tbody>
+                            </table>
+                            </div>
+                    </div>
                     <hr />
                     <center><h4>Confirmación de Email</h4></center>
                     <div class="row">
@@ -150,23 +165,7 @@
                     <hr />
                     <center><h4>Pedido Actual</h4></center>
                     <table class="table table-bordered" id="content" required>
-                        <tr>
-                            <th>
-                                DESCRIPCION
-                            </th>
-                            <th>
-                                ENVASE
-                            </th>
-                            <th>
-                            PRECIO
-                            </th>
-                            <th>
-                            CANTIDAD
-                            </th>
-                            <th>
-                            TOTAL
-                            </th>
-                        </tr>
+
                     </table>
                     <div id="pedido_corto"></div>
                   </div>
