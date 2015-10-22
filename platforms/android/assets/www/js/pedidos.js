@@ -146,7 +146,7 @@ function populateProductos(familia){
                     var row = result2.rows.item(j);
                     var familia2 = row['familia'];
                     var familia = familia2.replace("/", "-");
-                    $('#content_'+familia.replace(/ /g, '_')).append('<tr><td id="desc_'+row['sap']+'">'+row['descripcion']+'</td><td>'+row['envase']+'</td><td><input type="hidden" id="old_'+row['sap']+'"><input type="hidden" id="old2_'+row['sap']+'"><select id="precio_'+row['sap']+'" class="form-control" style="width:100px"></select></td><td><input type="number" id="cantidad_'+row['sap']+'" value="0" class="form-cotrol" style="width:80px"></td><td><input type="text" id="calculo_'+row['sap']+'" readonly class="form-cotrol" style="width:80px"></td><td><input type="button" id="descButton_'+row['sap']+'" class="btn btn-xs btn-danger" value="OFF" disabled></td></tr>');
+                    $('#content_'+familia.replace(/ /g, '_')).append('<tr><td id="desc_'+row['sap']+'">'+row['descripcion']+'</td><td>'+row['envase']+'</td><td><select id="precio_'+row['sap']+'" class="form-control" style="width:100px"></select></td><td><input type="number" id="cantidad_'+row['sap']+'" value="0" class="form-cotrol" style="width:80px"></td><td><input type="text" id="calculo_'+row['sap']+'" readonly class="form-cotrol" style="width:80px"></td><td style="width:90px"><select id="descuentos_'+row['sap']+'" class="form-control"></select><input type="hidden" id="old_'+row['sap']+'"><input type="hidden" id="index_'+row['sap']+'"></td></tr>');
                 }
             });
         });
@@ -168,7 +168,29 @@ $("#buscar").change(function(){
         $("#codigo").val(codigo);
         $("#lista").val(lista);
         db3.transaction(function(tx){
-            
+
+            tx.executeSql('SELECT * FROM Descuentos', [], function(tx, result){
+                for (var i = 0; i < result.rows.length; i++){
+                    var row = result.rows.item(i);
+                    tx.executeSql('SELECT * FROM Productos', [], function(tx, result1){
+                        for(var j = 0; j < result1.rows.length; j++){
+                            var row1 = result1.rows.item(j);
+                            if(row['p' + row1['sap']] > 0)
+                            {
+                                var valores = "";
+                                for(var h = 0; h < Number(row['p' + row1['sap']])+1; h++)
+                                {
+                                    valores = valores + '<option value="'+h+'">'+h+'%</option>';
+                                }
+                                $('#descuentos_'+row1['sap']).empty();
+                                $('#descuentos_'+row1['sap']).append(valores);
+
+                            }
+                        }
+                    });
+                }
+            });
+
             tx.executeSql('SELECT * FROM Productos', [], function(tx, result){
                 for (var i = 0; i < result.rows.length; i++) 
                 {
@@ -178,17 +200,17 @@ $("#buscar").change(function(){
                         if($row1['LA'] > 0)
                         {
                             var precio_la = Number($row1['LA']);
-                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                            $("#precio_" + $row1['sap']).append("<option value='"+precio_la.toFixed(2)+"'>"+precio_la.toFixed(2)+"</option>");
                         }
                         if($row1['MIX_LA_LE'] > 0)
                         {
                             var precio_mix_la_le = Number($row1['MIX_LA_LE']);
-                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                           $("#precio_" + $row1['sap']).append("<option value='"+precio_mix_la_le.toFixed(2)+"'>"+precio_mix_la_le.toFixed(2)+"</option>");
                         }
                         if($row1['LE'] > 0)
                         {
                             var precio_le = Number($row1['LE']);
-                            $("#precio_" + $row1['sap']).append("<option>"+precio_le.toFixed(2)+"</option>");
+                            $("#precio_" + $row1['sap']).append("<option value='"+precio_le.toFixed(2)+"'>"+precio_le.toFixed(2)+"</option>");
                         }
 
                     }
@@ -198,12 +220,12 @@ $("#buscar").change(function(){
                         if($row1['LA'] > 0)
                         {
                             var precio_la = Number($row1['LA']);
-                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                            $("#precio_" + $row1['sap']).append("<option value='"+precio_la.toFixed(2)+"'>"+precio_la.toFixed(2)+"</option>");
                         }
                         if($row1['MIX_LA_LE'] > 0)
                         {
                             var precio_mix_la_le = Number($row1['MIX_LA_LE']);
-                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                           $("#precio_" + $row1['sap']).append("<option value='"+precio_mix_la_le.toFixed(2)+"'>"+precio_mix_la_le.toFixed(2)+"</option>");
                         }
 
                     }else{
@@ -211,26 +233,26 @@ $("#buscar").change(function(){
                         if($row1['LA'] > 0)
                         {
                             var precio_la = Number($row1['LA']);
-                            $("#precio_" + $row1['sap']).append("<option>"+precio_la.toFixed(2)+"</option>");
+                            $("#precio_" + $row1['sap']).append("<option value='"+precio_la.toFixed(2)+"'>"+precio_la.toFixed(2)+"</option>");
                         }
                         if($row1[l] > 0)
                         {
                             var precio_mix_la_le = Number($row1[l]);
-                           $("#precio_" + $row1['sap']).append("<option>"+precio_mix_la_le.toFixed(2)+"</option>");
+                           $("#precio_" + $row1['sap']).append("<option value='"+precio_mix_la_le.toFixed(2)+"'>"+precio_mix_la_le.toFixed(2)+"</option>");
                         }
 
 
                     }
 
                     $("#old_" + $row1['sap']).val($row1['LA']);
-                    populateDescuentos($row1['sap'], l, $row1['descripcion']);
-
+                    $("#index_" + $row1['sap']).val('1');
                     calculos($row1['sap'], $row1['descripcion'], $row1['envase'], $row1['familia']);
+
 
                     
                 }
             });
-            
+
         });
 
         db2.transaction(function(tx){
@@ -254,9 +276,23 @@ $("#buscar").change(function(){
 function calculos(sap, desc, envase, familia)
 {
 
+    $('#descuentos_'+ sap).change(function(){
+        var valor_desc_actual = Number($(this).val()/100);
+        var valor_precio_actual = Number($("#old_" + sap).val());
+        var multiplicacion_descuento = valor_precio_actual * valor_desc_actual;
+        var valor_final = valor_precio_actual - multiplicacion_descuento.toFixed(2);
+        $("#precio_" + sap + " option:selected").val(valor_final.toFixed(2));
+        $("#precio_" + sap + " option:selected").text(valor_final.toFixed(2));
+    });
+
     $("#precio_" + sap).change(function(){
         $("#content").empty();
         $("#content").append('<tr><th>DESCRIPCION</th><th>ENVASE</th><th>PRECIO</th><th>CANTIDAD</th><th>TOTAL</th></tr>');
+        $("#precio_" + sap + " option:nth-child("+$("#index_" + sap).val()+")").val($("#old_" + sap).val());
+        $("#precio_" + sap + " option:nth-child("+$("#index_" + sap).val()+")").text($("#old_" + sap).val());
+        $("#old_" + sap).val($("#precio_" + sap).val());
+        $("#index_" + sap).val(Number($("#precio_" + sap + " option:selected").index())+1);
+        $('#descuentos_'+ sap + " option:nth-child(1)").prop("selected", true);
         db3.transaction(function(tx){
             tx.executeSql('SELECT * FROM Temp_Pedidos WHERE producto = "'+sap+'"', [], function(tx, result){
                 var cant = $("#cantidad_" + sap).val();
@@ -282,17 +318,24 @@ function calculos(sap, desc, envase, familia)
         });
 
 
+
+
         $sub_total = 0;
+        $descuento = 0;
 
         db3.transaction(function(tx){
             tx.executeSql('SELECT SUM(total) FROM Temp_Pedidos', [], function(tx, result2){
                 $sub_total = result2.rows.item(0)['SUM(total)'];
+            });
+            tx.executeSql('SELECT SUM(descuento) FROM Temp_Pedidos', [], function(tx, result2){
+                $descuento = result2.rows.item(0)['SUM(descuento)'];
             });
         });
 
 
         db3.transaction(function(tx){
             tx.executeSql('SELECT * FROM Temp_Pedidos', [], function(tx, result){
+                $desceunto2 = 0;
                 for(var i = 0; i < result.rows.length; i++)
                 {
                     var row = result.rows.item(i);
@@ -300,7 +343,7 @@ function calculos(sap, desc, envase, familia)
                     var cantidad = row['cantidad'];
                     var multi = row['total'];
                     var valor_descuento = 0;
-                    var descuento = Number(row['descuento']);
+                    var descuento = $descuento;
                     var suma_sub_total = Number($sub_total);
                     var iva = suma_sub_total * 0.12;
                     var valor_total = suma_sub_total + iva;
@@ -351,7 +394,10 @@ function calculos(sap, desc, envase, familia)
 
     });
 
+
+
     $("#cantidad_" + sap).change(function(){
+
         $("#content").empty();
         $("#content").append('<tr><th>DESCRIPCION</th><th>ENVASE</th><th>PRECIO</th><th>CANTIDAD</th><th>TOTAL</th></tr>');
         db3.transaction(function(tx){
@@ -425,10 +471,14 @@ function calculos(sap, desc, envase, familia)
 
 
         $sub_total = 0;
+        $descuento = 0;
 
         db3.transaction(function(tx){
             tx.executeSql('SELECT SUM(total) FROM Temp_Pedidos', [], function(tx, result2){
                 $sub_total = result2.rows.item(0)['SUM(total)'];
+            });
+            tx.executeSql('SELECT SUM(descuento) FROM Temp_Pedidos', [], function(tx, result2){
+                $descuento = result2.rows.item(0)['SUM(descuento)'];
             });
         });
 
@@ -442,7 +492,7 @@ function calculos(sap, desc, envase, familia)
                     var cantidad = row['cantidad'];
                     var multi = Number(row['total']);
                     var valor_descuento = 0;
-                    var descuento = Number(row['descuento']);
+                    var descuento = $descuento;
                     var suma_sub_total = Number($sub_total);
                     var iva = suma_sub_total * 0.12;
                     var valor_total = suma_sub_total + iva;
@@ -492,118 +542,10 @@ function calculos(sap, desc, envase, familia)
         });
 
     });
-}
 
-function populateDescuentos(sap, l, descripcion)
-{
-    db3.transaction(function(tx){
-        tx.executeSql('SELECT * FROM Descuentos WHERE desde <= "'+fecha+'" AND hasta >= "'+fecha+'"', [], function(tx, result){
-            for(var j = 0; j < result.rows.length; j++)
-            {
-                var row = result.rows.item(j);
-                var desc = row['p' + sap];
-                var poc_desc = desc / 100;
-                var lista = row['lista'];
-
-                if(lista == "MIX_LA_LE")
-                {
-                    if (l == "LA" || l == "LE")
-                    {
-                        if (desc > 0)
-                        {
-                            var valor = $("#precio_" + sap + " option:nth-child(2)").val();
-                            var valor2 = valor * poc_desc;
-                            var valor3 = valor - valor2;
-                            $("#descButton_" + sap).prop('disabled', false);
-                            $("#descButton_" + sap).click(function(){
-                               if($("#descButton_" + sap).hasClass("btn btn-xs btn-danger"))
-                               {
-                                    $("#descButton_" + sap).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
-                                    $("#descButton_" + sap).val("ON");
-                                    $("#precio_" + sap + " option:nth-child(2)").text(valor3.toFixed(2));
-                               }else{
-                                    $("#descButton_" + sap).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
-                                    $("#descButton_" + sap).val("OFF");
-                                    $("#precio_" + sap + " option:nth-child(2)").text(valor);
-                               }
-                            });
-                        }
-                    }
-                }
-
-                if(lista == "LA")
-                {
-                    if (desc > 0)
-                        {
-                            var valor = $("#precio_" + sap + " option:nth-child(1)").val();
-                            var valor2 = valor * poc_desc;
-                            var valor3 = valor - valor2;
-                            $("#descButton_" + sap).prop('disabled', false);
-                            $("#descButton_" + sap).click(function(){
-                               if($(this).hasClass("btn btn-xs btn-danger"))
-                               {
-                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
-                                    $(this).val("ON");
-                                    $("#precio_" + sap + " option:nth-child(1)").text(valor3.toFixed(2));
-                               }else{
-                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
-                                    $(this).val("OFF");
-                                    $("#precio_" + sap + " option:nth-child(1)").text(valor);
-                               }
-                            });
-                        }
-                }
-
-                if(lista == "LE")
-                {
-                    if (desc > 0)
-                        {
-                            var valor = $("#precio_" + sap + " option:nth-child(3)").val();
-                            var valor2 = valor * poc_desc;
-                            var valor3 = valor - valor2;
-                            $("#descButton_" + sap).prop('disabled', false);
-                            $("#descButton_" + sap).click(function(){
-                               if($(this).hasClass("btn btn-xs btn-danger"))
-                               {
-                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
-                                    $(this).val("ON");
-                                    $("#precio_" + sap + " option:nth-child(3)").text(valor3.toFixed(2));
-                               }else{
-                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
-                                    $(this).val("OFF");
-                                    $("#precio_" + sap + " option:nth-child(3)").text(valor);
-                               }
-                            });
-                        }
-                }
-
-                if(lista == "p54")
-                {
-                    if (desc > 0)
-                        {
-                            var valor = $("#precio_" + sap + " option:nth-child(2)").val();
-                            var valor2 = valor * poc_desc;
-                            var valor3 = valor - valor2;
-                            $("#descButton_" + sap).prop('disabled', false);
-                            $("#descButton_" + sap).click(function(){
-                               if($(this).hasClass("btn btn-xs btn-danger"))
-                               {
-                                    $(this).removeClass("btn btn-xs btn-danger").addClass("btn btn-xs btn-success");
-                                    $(this).val("ON");
-                                    $("#precio_" + sap + " option:nth-child(2)").text(valor3.toFixed(2));
-                               }else{
-                                    $(this).removeClass("btn btn-xs btn-success").addClass("btn btn-xs btn-danger");
-                                    $(this).val("OFF");
-                                    $("#precio_" + sap + " option:nth-child(2)").text(valor);
-                               }
-                            });
-                        }
-                }
-            }
-        });
-    });
 
 }
+
 
 $("#enviar").click(function(){
     if ($("#local").val() == "") 
